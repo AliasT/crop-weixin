@@ -20,6 +20,7 @@ const CROP_HEIGHT = 200
 
 export default class Crop {
   static zIndex = 200
+  ready = false
 
   constructor(imgsrc) {
     this.setUpContainer()
@@ -29,13 +30,43 @@ export default class Crop {
 
   setUpImage(src) {
     const image = document.createElement('img')
-    image.src = src
     this.container.appendChild(image)
+    this.image = image
+    image.onload = (e) => {
+      this._naturlWidth = e.target.width
+      this._naturlHeight = e.target.height
+
+      const width = window.innerWidth
+      const height = this._naturlHeight / this._naturlWidth * width
+      const y = (window.innerHeight - height) / 2
+      this.setImageFrame({width, height, y })
+    }
+    image.src = src
+  }
+
+  setImageFrame({ width, height, x=0, y=0 }) {
+    setCssRules(this.image, {
+      width: `${width}px`,
+      height: `${height}px`,
+      transform: `translate(${x}px, ${y}px)`
+    })      
   }
 
   setUpContainer() {
     this.container = document.createElement('div')
+    setCssRules(this.container, {
+      overflow: 'hidden',
+      position: 'fixed',
+      width: '100%',
+      left: 0,
+      top: 0,
+      bottom: 0,
+      right: 0
+    })
     document.body.appendChild(this.container)
+    // const rect = this.container.getBoundingClientRect()
+    // this._containerWidth = rect.width
+    // this._containeHeight = rect.height
   }
 
   setUpCanvas() {
@@ -44,6 +75,12 @@ export default class Crop {
 
     this.canvas = canvas
 
+    setCssRules(canvas, {
+      position: 'absolute',
+      left: 0,
+      top: 0
+    })
+    
     canvas.width = window.innerWidth
     canvas.height = window.innerHeight
 
