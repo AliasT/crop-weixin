@@ -21,7 +21,9 @@ const CROP_HEIGHT = 200
 export default class Crop {
   static zIndex = 200
   ready = false
-  
+  ratio = 1
+  dragging = false
+
   constructor(imgsrc) {
     this.setUpContainer()
     this.setUpImage(imgsrc)
@@ -49,93 +51,20 @@ export default class Crop {
     hammer.get('pan').set({ direction: Hammer.DIRECTION_ALL });
   }
 
-  panstart = (evt) => {
-    this.startX = this.currentX
-    this.startY = this.currentY
-  }
-
-  panmove = (evt) => {
-    this.currentX = this.startX + evt.deltaX
-    this.currentY = this.startY + evt.deltaY
-  }
-
-  panend = (evt) => {
-    this.check()
-  }
-
-  pinchstart = (evt) => {
-    this.startX = this.currentX
-    this.startY = this.currentY
-
-    this.startWidth = this.currentWidth
-    this.startHeight = this.currentHeight
-  }
-
-  pinchmove = (evt) => {
-    const { x, y } = evt.center
-    this.currentX = evt.scale * (this.startX - x) + x
-    this.currentY = evt.scale * (this.startY - y) + y
-    this.currentWidth = this.startWidth * evt.scale
-    this.currentHeight = this.startHeight * evt.scale
-  }
-
-  pinchend = (evt) => {
-    // this.check()
-  }
-
-  update= () => {
-    const { currentWidth, currentHeight, currentX, currentY } = this
-    setCssRules(this.image, {
-      width: `${currentWidth}px`,
-      height: `${currentHeight}px`,
-      transform: `translate(${currentX}px, ${currentY}px)`
-    })  
-    requestAnimationFrame(this.update)
-  }
-
-  check = () => {
-    const maxY = Math.max(this.viewportY, this.viewportY + (CROP_HEIGHT - this.currentHeight) / 2)
-    const minY = Math.min(this.viewportY, this.viewportY - this.currentHeight + CROP_HEIGHT)
-    const maxX = this.viewportX
-    const minX = Math.min(this.viewportX, this.viewportX - this.currentWidth + CROP_WIDTH)
-
-    if (this.currentX < minX) this.currentX = minX
-    if (this.currentX > maxX) this.currentX = maxX
-
-    if (this.currentY < minY) {
-     if (this.currentHeight < CROP_HEIGHT) this.currentY = maxY
-     else this.currentY = minY
-    }
-    if (this.currentY > maxY) this.currentY = maxY
-
-    this.image.style.willChange = 'transform, width, height'
-    this.image.style.transition = "transfrom, width, height, 150ms ease-out"
-    const transitionEnd = (evt) => {
-      this.image.removeEventListener('transitionend', transitionEnd)
-      this.image.style.willChange = 'initial'
-      this.image.style.transition = ''
-    }
-    this.image.addEventListener('transitionend', transitionEnd)
-  }
 
   setUpImage(src) {
     const image = document.createElement('img')
     this.container.appendChild(image)
     this.image = image
     image.onload = (e) => {
-      this._naturlWidth = e.target.width
-      this._naturlHeight = e.target.height
-
+      this._naturalWidth = e.target.width
+      this._naturalHeight = e.target.height
       this.currentWidth = window.innerWidth
-      this.currentHeight = this._naturlHeight / this._naturlWidth * this.currentWidth
+      this.currentHeight = this._naturalHeight / this._naturalWidth * this.currentWidth
       this.currentX = 0
       this.currentY = (window.innerHeight - this.currentHeight) / 2
     }
     image.src = src
-  }
-
-  setImageFrame({ width, height, x=0, y=0 }) {
-    
   }
 
   setUpContainer() {
@@ -186,5 +115,124 @@ export default class Crop {
     ctx.stroke()
 
     this.container.appendChild(canvas)
+  }
+
+  update = () => {
+    if(!this.dragging) {
+      setCssRules(this.image, {
+        willChange: 'transform, width, height',
+        transition: "transfrom, width, height, 150ms ease-out"
+      })
+    } else {
+      setCssRules(this.image, {
+        willChange: 'initial',
+        transition: ''
+      })
+    }
+    const { currentWidth, currentHeight, currentX, currentY } = this
+    setCssRules(this.image, {
+      width: `${currentWidth}px`,
+      height: `${currentHeight}px`,
+      transform: `translate(${currentX}px, ${currentY}px)`
+    })  
+    requestAnimationFrame(this.update)
+  }
+
+  get result() {
+    const { width, height, top, left } = this.image.getBoundingClientRect()
+    const canvas = document.createElement('canvas')
+    const ctx = canvas.getContext('2d')
+    const ratio = this._naturalWidth / width
+
+    const sx = (this.viewportX - left) * ratio
+    const sy = (this.viewportY - top) * ratio
+
+    const WIDTH = CROP_WIDTH * ratio
+    const HEIGHT = WIDTH
+
+    canvas.imageSmoothEnabled = false
+    canvas.width = CROP_WIDTH
+    canvas.height = CROP_HEIGHT
+    
+    ctx.drawImage(this.image, sx, sy, WIDTH, HEIGHT, 0, 0, CROP_WIDTH, CROP_HEIGHT)
+    return canvas.toDataURL("image/png")
+  }
+
+  panstart = (evt) => {
+    this.dragging = true
+    this.startX = this.currentX
+    this.startY = this.currentY
+  }
+
+  panmove = (evt) => {
+    this.currentX = this.startX + evt.deltaX
+    this.currentY = this.startY + evt.deltaY
+  }
+
+  panend = (evt) => {
+    this.dragging = false
+    this.check()
+  }
+
+  pinchstart = (evt) => {
+    this.dragging = true
+    this.startX = this.currentX
+    this.startY = this.currentY
+
+    this.startWidth = this.currentWidth
+    this.startHeight = this.currentHeight
+  }
+
+  pinchmove = (evt) => {
+    this.center = evt.center
+    const { x, y } = this.center
+    this.currentX = evt.scale * (this.startX - x) + x
+    this.currentY = evt.scale * (this.startY - y) + y
+    this.currentWidth = this.startWidth * evt.scale
+    this.currentHeight = this.startHeight * evt.scale
+  }
+
+  pinchend = (evt) => {
+    this.dragging = false
+    this.startWidth = this.currentWidth
+    this.startHeight = this.currentHeight
+    this.startX = this.currentX
+    this.startY = this.currentY
+    this.scaleCheck()
+  }
+
+  scale(ratio) {
+    const { x, y } = this.center
+    this.currentX = ratio * (this.startX - x) + x
+    this.currentY = ratio * (this.startY - y) + y
+    this.currentWidth = this.startWidth * ratio
+    this.currentHeight = this.startHeight * ratio
+
+    this.check()
+  }
+
+  scaleCheck() {
+    const minRatio = CROP_WIDTH / window.innerWidth // 最小缩放比
+    const maxRatio = 3  // 最大缩放比
+    let r = this.currentWidth / window.innerWidth // 当前图片缩放比列
+    if (r < minRatio) r = minRatio
+    else if (r > maxRatio) r = maxRatio
+    this.scale(r * window.innerWidth / this.startWidth)
+  }
+
+  check = () => {
+    const maxY = Math.max(this.viewportY, this.viewportY + (CROP_HEIGHT - this.currentHeight) / 2)
+    const minY = Math.min(this.viewportY, this.viewportY - this.currentHeight + CROP_HEIGHT)
+    const maxX = this.viewportX
+    const minX = Math.min(this.viewportX, this.viewportX - this.currentWidth + CROP_WIDTH)
+
+    if (this.currentX < minX) this.currentX = minX
+    if (this.currentX > maxX) this.currentX = maxX
+
+    if (this.currentY < minY) {
+     if (this.currentHeight < CROP_HEIGHT) this.currentY = maxY
+     else this.currentY = minY
+    }
+    if (this.currentY > maxY) this.currentY = maxY
   }
 }
