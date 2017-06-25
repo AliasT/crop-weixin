@@ -10,5 +10,9 @@ module.exports  = {
     rules: [
       { test: /\.js$/, exclude: /node_modules/, loader: "babel-loader" }
     ]
+  },
+  devServer: {
+    host: "0.0.0.0",
+    disableHostCheck: true
   }
 }

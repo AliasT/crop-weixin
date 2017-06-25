@@ -31,9 +31,18 @@ export default class Crop {
   }
 
   setUpListeners() {
-    const hammer = new Hammer(this.canvas)
+    const hammer = new Hammer(this.canvas, {
+      domEvents: true
+    })
+    Hammer.Pan({ threshold: 0 })
+    Hammer.Pinch({ threshold: 0 })
     hammer.on('panstart', this.panstart)
     hammer.on('panmove', this.panmove)
+    hammer.on('pinchstart', this.pinchstart)
+    hammer.on('pinchmove', this.pinchmove)
+
+    hammer.get('pinch').set({ enable: true })
+    hammer.get('pan').set({ direction: Hammer.DIRECTION_ALL });
   }
 
   panstart = (evt) => {
@@ -51,11 +60,19 @@ export default class Crop {
   }
 
   pinchstart = (evt) => {
+    this.startX = this.currentX
+    this.startY = this.currentY
 
+    this.startWidth = this.currentWidth
+    this.startHeight = this.currentHeight
   }
 
   pinchmove = (evt) => {
-
+    const { x, y } = evt.center
+    this.currentX = evt.scale * (this.startX - x) + x
+    this.currentY = evt.scale * (this.startY - y) + y
+    this.currentWidth = this.startWidth * evt.scale
+    this.currentHeight = this.startHeight * evt.scale
   }
 
   pinchend = (evt) => {
