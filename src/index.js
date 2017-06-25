@@ -36,10 +36,14 @@ export default class Crop {
     })
     Hammer.Pan({ threshold: 0 })
     Hammer.Pinch({ threshold: 0 })
+
     hammer.on('panstart', this.panstart)
     hammer.on('panmove', this.panmove)
+    hammer.on('panend', this.panend)
+
     hammer.on('pinchstart', this.pinchstart)
     hammer.on('pinchmove', this.pinchmove)
+    hammer.on('pinchend', this.pinchend)
 
     hammer.get('pinch').set({ enable: true })
     hammer.get('pan').set({ direction: Hammer.DIRECTION_ALL });
@@ -56,7 +60,7 @@ export default class Crop {
   }
 
   panend = (evt) => {
-
+    this.check()
   }
 
   pinchstart = (evt) => {
@@ -76,7 +80,7 @@ export default class Crop {
   }
 
   pinchend = (evt) => {
-
+    // this.check()
   }
 
   update= () => {
@@ -87,6 +91,22 @@ export default class Crop {
       transform: `translate(${currentX}px, ${currentY}px)`
     })  
     requestAnimationFrame(this.update)
+  }
+
+  check = () => {
+    const maxY = Math.max(this.viewportY, this.viewportY + (CROP_HEIGHT - this.currentHeight) / 2)
+    const minY = Math.min(this.viewportY, this.viewportY - this.currentHeight + CROP_HEIGHT)
+    const maxX = this.viewportX
+    const minX = Math.min(this.viewportX, this.viewportX - this.currentWidth + CROP_WIDTH)
+
+    if (this.currentX < minX) this.currentX = minX
+    if (this.currentX > maxX) this.currentX = maxX
+
+    if (this.currentY < minY) {
+     if (this.currentHeight < CROP_HEIGHT) this.currentY = maxY
+     else this.currentY = minY
+    }
+    if (this.currentY > maxY) this.currentY = maxY
   }
 
   setUpImage(src) {
@@ -146,14 +166,14 @@ export default class Crop {
     ctx.fill()
 
     // 裁剪预览区的左上坐标
-    this.viewportLeft = (canvas.width / 2) - (CROP_WIDTH / 2)
-    this.viewportTop = (canvas.height / 2) - (CROP_HEIGHT / 2)
+    this.viewportX = (canvas.width / 2) - (CROP_WIDTH / 2)
+    this.viewportY = (canvas.height / 2) - (CROP_HEIGHT / 2)
 
-    ctx.clearRect(this.viewportLeft, this.viewportTop, CROP_WIDTH, CROP_HEIGHT)
+    ctx.clearRect(this.viewportX, this.viewportY, CROP_WIDTH, CROP_HEIGHT)
 
     ctx.strokeStyle = 'white'
     ctx.strokeWidth = 2
-    ctx.strokeRect(this.viewportLeft, this.viewportTop, CROP_WIDTH, CROP_HEIGHT)
+    ctx.strokeRect(this.viewportX, this.viewportY, CROP_WIDTH, CROP_HEIGHT)
     ctx.stroke()
 
     this.container.appendChild(canvas)
