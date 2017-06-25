@@ -5,7 +5,7 @@
  * 更新方案来自google ui-elements-sample
  */
 
-// import Hammer from 'hammer'
+import Hammer from 'hammerjs'
 
 function setCssRules(target, rules) {
   Object.keys(rules).reduce((ret, cur) => {
@@ -26,6 +26,50 @@ export default class Crop {
     this.setUpContainer()
     this.setUpImage(imgsrc)
     this.setUpCanvas()
+    this.setUpListeners()
+    this.update()
+  }
+
+  setUpListeners() {
+    const hammer = new Hammer(this.canvas)
+    hammer.on('panstart', this.panstart)
+    hammer.on('panmove', this.panmove)
+  }
+
+  panstart = (evt) => {
+    this.startX = this.currentX
+    this.startY = this.currentY
+  }
+
+  panmove = (evt) => {
+    this.currentX = this.startX + evt.deltaX
+    this.currentY = this.startY + evt.deltaY
+  }
+
+  panend = (evt) => {
+
+  }
+
+  pinchstart = (evt) => {
+
+  }
+
+  pinchmove = (evt) => {
+
+  }
+
+  pinchend = (evt) => {
+
+  }
+
+  update= () => {
+    const { currentWidth, currentHeight, currentX, currentY } = this
+    setCssRules(this.image, {
+      width: `${currentWidth}px`,
+      height: `${currentHeight}px`,
+      transform: `translate(${currentX}px, ${currentY}px)`
+    })  
+    requestAnimationFrame(this.update)
   }
 
   setUpImage(src) {
@@ -36,20 +80,16 @@ export default class Crop {
       this._naturlWidth = e.target.width
       this._naturlHeight = e.target.height
 
-      const width = window.innerWidth
-      const height = this._naturlHeight / this._naturlWidth * width
-      const y = (window.innerHeight - height) / 2
-      this.setImageFrame({width, height, y })
+      this.currentWidth = window.innerWidth
+      this.currentHeight = this._naturlHeight / this._naturlWidth * this.currentWidth
+      this.currentX = 0
+      this.currentY = (window.innerHeight - this.currentHeight) / 2
     }
     image.src = src
   }
 
   setImageFrame({ width, height, x=0, y=0 }) {
-    setCssRules(this.image, {
-      width: `${width}px`,
-      height: `${height}px`,
-      transform: `translate(${x}px, ${y}px)`
-    })      
+    
   }
 
   setUpContainer() {

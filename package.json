@@ -8,6 +8,7 @@
     "dev": "webpack-dev-server"
   },
   "dependencies": {
+    "hammerjs": "^2.0.8",
     "webpack": "^3.0.0",
     "webpack-dev-server": "^2.5.0"
   },
