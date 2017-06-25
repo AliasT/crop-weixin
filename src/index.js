@@ -21,7 +21,7 @@ const CROP_HEIGHT = 200
 export default class Crop {
   static zIndex = 200
   ready = false
-
+  
   constructor(imgsrc) {
     this.setUpContainer()
     this.setUpImage(imgsrc)
@@ -107,6 +107,15 @@ export default class Crop {
      else this.currentY = minY
     }
     if (this.currentY > maxY) this.currentY = maxY
+
+    this.image.style.willChange = 'transform, width, height'
+    this.image.style.transition = "transfrom, width, height, 150ms ease-out"
+    const transitionEnd = (evt) => {
+      this.image.removeEventListener('transitionend', transitionEnd)
+      this.image.style.willChange = 'initial'
+      this.image.style.transition = ''
+    }
+    this.image.addEventListener('transitionend', transitionEnd)
   }
 
   setUpImage(src) {
