@@ -130,8 +130,8 @@ var Crop = function () {
     this.update = function () {
       if (!_this.dragging) {
         setCssRules(_this.image, {
-          willChange: 'transform, width, height',
-          transition: "transfrom, width, height, 150ms ease-out"
+          willChange: 'left, top, width, height',
+          transition: "transfrom, width, height, 100ms"
         });
       } else {
         setCssRules(_this.image, {
@@ -147,7 +147,9 @@ var Crop = function () {
       setCssRules(_this.image, {
         width: currentWidth + 'px',
         height: currentHeight + 'px',
-        transform: 'translate(' + currentX + 'px, ' + currentY + 'px)'
+        left: currentX + 'px',
+        top: currentY + 'px'
+        // transform: `translate(${currentX}px, ${currentY}px)`
       });
       requestAnimationFrame(_this.update);
     };
@@ -249,6 +251,7 @@ var Crop = function () {
       this.container.appendChild(image);
       this.image = image;
       image.onload = function (e) {
+        e.target.style.position = "relative";
         _this2._naturalWidth = e.target.width;
         _this2._naturalHeight = e.target.height;
         _this2.currentWidth = window.innerWidth;
@@ -272,9 +275,6 @@ var Crop = function () {
         right: 0
       });
       document.body.appendChild(this.container);
-      // const rect = this.container.getBoundingClientRect()
-      // this._containerWidth = rect.width
-      // this._containeHeight = rect.height
     }
   }, {
     key: 'setUpCanvas',

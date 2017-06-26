@@ -57,6 +57,7 @@ export default class Crop {
     this.container.appendChild(image)
     this.image = image
     image.onload = (e) => {
+      e.target.style.position = "relative"
       this._naturalWidth = e.target.width
       this._naturalHeight = e.target.height
       this.currentWidth = window.innerWidth
@@ -79,9 +80,6 @@ export default class Crop {
       right: 0
     })
     document.body.appendChild(this.container)
-    // const rect = this.container.getBoundingClientRect()
-    // this._containerWidth = rect.width
-    // this._containeHeight = rect.height
   }
 
   setUpCanvas() {
@@ -120,8 +118,8 @@ export default class Crop {
   update = () => {
     if(!this.dragging) {
       setCssRules(this.image, {
-        willChange: 'transform, width, height',
-        transition: "transfrom, width, height, 150ms ease-out"
+        willChange: 'left, top, width, height',
+        transition: "transfrom, width, height, 100ms"
       })
     } else {
       setCssRules(this.image, {
@@ -133,7 +131,9 @@ export default class Crop {
     setCssRules(this.image, {
       width: `${currentWidth}px`,
       height: `${currentHeight}px`,
-      transform: `translate(${currentX}px, ${currentY}px)`
+      left: `${currentX}px`,
+      top: `${currentY}px`
+      // transform: `translate(${currentX}px, ${currentY}px)`
     })  
     requestAnimationFrame(this.update)
   }
